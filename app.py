@@ -6,19 +6,22 @@ import requests
 import datetime
 
 # --- Konfigurasi ---
-# Ganti dengan token dan chat ID Telegram Anda
-TELEGRAM_TOKEN = "8254431453:AAHKeJBQUKimm8ZRsAXBJLKpNZ2w2VIcZ64"
-TELEGRAM_CHAT_ID = "-4884449649"  # Ganti dengan Chat ID Anda
+# Mengambil secrets dari Streamlit
+try:
+    TELEGRAM_TOKEN = st.secrets["telegram"]["token"]
+    TELEGRAM_CHAT_ID = st.secrets["telegram"]["chat_id"]
+    gcp_service_account = st.secrets["gcp_service_account"]
+except KeyError as e:
+    st.error(f"Kunci rahasia tidak ditemukan. Harap pastikan secrets.toml telah dikonfigurasi dengan benar: {e}")
+    st.stop()
 
 # Konfigurasi Google Sheets Anda
-# URL Google Sheet Anda
 GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1e37zzocS0pTFhWtIly4F_QNkOd9h95Yz7aC4tMCV3pg/edit?gid=0#gid=0"
-# Nama sheet tempat data akan disimpan
 SHEET_NAME = "element"
 
-# Konfigurasi Google Sheets API
+# --- Koneksi ke Google Sheets ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+creds = Credentials.from_service_account_info(gcp_service_account, scopes=scope)
 client = gspread.authorize(creds)
 
 try:
@@ -30,7 +33,6 @@ except gspread.WorksheetNotFound:
 except Exception as e:
     st.error(f"Terjadi kesalahan saat menghubungkan ke Google Sheets: {e}")
     st.stop()
-
 
 # --- Fungsi untuk mengirim foto ke Telegram ---
 def send_photo_to_telegram(photo_data, caption):
