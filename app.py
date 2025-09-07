@@ -8,8 +8,6 @@ import io
 import json
 from streamlit_folium import st_folium
 import folium
-from streamlit_geolocation import geolocation
-
 # Konfigurasi halaman
 st.set_page_config(
     page_title="Form Survey ODP/ODC + Telegram",
