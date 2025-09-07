@@ -8,6 +8,7 @@ import io
 import json
 from streamlit_folium import st_folium
 import folium
+from streamlit_geolocation import geolocation
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -178,30 +179,10 @@ with st.form("survey_form"):
         odp_name = st.text_input("Nama ODP/ODC*", help="Masukkan nama ODP/ODC")
     
     with col2:
-        st.markdown("**Kirim Lokasi GPS dari HP/Browser**")
-        gps_button = st.button("Ambil Lokasi GPS")
+        st.markdown("**Pilih Lokasi di Peta**")
         latitude = None
         longitude = None
 
-        if gps_button:
-            location = geolocation()
-            if location:
-                latitude = location['coords']['latitude']
-                longitude = location['coords']['longitude']
-                st.success(f"Lokasi GPS: {latitude}, {longitude}")
-                st.session_state["auto_lat"] = latitude
-                st.session_state["auto_lon"] = longitude
-            else:
-                st.warning("Gagal mengambil lokasi GPS dari perangkat.")
-
-        # Jika sudah ada di session_state, tampilkan
-        if st.session_state.get("auto_lat") and st.session_state.get("auto_lon"):
-            latitude = st.session_state["auto_lat"]
-            longitude = st.session_state["auto_lon"]
-            st.info(f"Koordinat: {latitude}, {longitude}")
-
-        # Opsi klik peta dan deteksi IP tetap bisa dipakai sebagai alternatif
-        st.markdown("**Pilih Lokasi di Peta**")
         m = folium.Map(location=[-6.175392, 106.827153], zoom_start=12)
         loc = st_folium(m, width=350, height=250)
         if loc and loc["last_clicked"]:
@@ -221,13 +202,8 @@ with st.form("survey_form"):
                         st.warning("Gagal mendeteksi lokasi dari IP.")
                 except Exception:
                     st.warning("Gagal mendeteksi lokasi dari IP.")
-            # Tampilkan koordinat otomatis jika sudah ada
-            if st.session_state["auto_lat"] and st.session_state["auto_lon"]:
-                latitude = st.session_state["auto_lat"]
-                longitude = st.session_state["auto_lon"]
-                st.info(f"Koordinat otomatis: {latitude}, {longitude}")
-            else:
-                st.info("Klik pada peta atau tekan tombol untuk mendeteksi lokasi.")
+        if latitude is None or longitude is None:
+            st.info("Klik pada peta atau tekan tombol untuk mendeteksi lokasi.")
 
     location_address = st.text_area("Alamat Lokasi*", height=100)
     
