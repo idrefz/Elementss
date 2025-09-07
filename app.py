@@ -8,6 +8,7 @@ import io
 import json
 from streamlit_folium import st_folium
 import folium
+
 # Konfigurasi halaman
 st.set_page_config(
     page_title="Form Survey ODP/ODC + Telegram",
@@ -262,10 +263,24 @@ with st.form("survey_form"):
     st.markdown("**Wajib diisi*")
     
     # Tombol submit
+    deteksi_otomatis = st.form_submit_button("Deteksi Lokasi Otomatis")
     submitted = st.form_submit_button("Simpan & Kirim ke Telegram")
-    
-    # Validasi dan proses data setelah submit
+
+    if deteksi_otomatis:
+        # proses deteksi lokasi otomatis
+        try:
+            ipinfo = requests.get("https://ipinfo.io/json").json()
+            if "loc" in ipinfo:
+                latlon = ipinfo["loc"].split(",")
+                latitude = float(latlon[0])
+                longitude = float(latlon[1])
+                st.success(f"Lokasi otomatis: {latitude}, {longitude}")
+            else:
+                st.warning("Gagal mendeteksi lokasi dari IP.")
+        except Exception:
+            st.warning("Gagal mendeteksi lokasi dari IP.")
     if submitted:
+        # proses simpan dan kirim
         error_messages = []
         
         # Validasi field wajib
