@@ -1,4 +1,4 @@
-import streamlit as st
+import gunakanstreamlit as st
 import requests
 import pandas as pd
 from datetime import datetime
@@ -8,6 +8,7 @@ import io
 import json
 from streamlit_folium import st_folium
 import folium
+from streamlit_geolocation import geolocation
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -91,22 +92,24 @@ def save_data(data):
 # Fungsi untuk mengelola unggahan gambar
 def handle_image_upload(uploaded_files, odp_name):
     saved_paths = []
+    folder = "uploaded_images"
     
     # Buat folder jika belum ada
-    if not os.path.exists('uploaded_images'):
-        os.makedirs('uploaded_images')
+    try:
+        os.makedirs(folder, exist_ok=True)
+    except Exception as e:
+        st.error(f"Gagal membuat folder '{folder}': {str(e)}")
+        return []
     
     for i, uploaded_file in enumerate(uploaded_files):
-        # Baca gambar
-        image = Image.open(uploaded_file)
-        
-        # Generate nama file unik
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"uploaded_images/{odp_name}_{timestamp}_{i}.jpg"
-        
-        # Simpan gambar
-        image.save(filename)
-        saved_paths.append(filename)
+        try:
+            image = Image.open(uploaded_file)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(folder, f"{odp_name}_{timestamp}_{i}.jpg")
+            image.save(filename)
+            saved_paths.append(filename)
+        except Exception as e:
+            st.error(f"Gagal menyimpan gambar: {str(e)}")
     
     return saved_paths
 
@@ -176,17 +179,66 @@ with st.form("survey_form"):
         odp_name = st.text_input("Nama ODP/ODC*", help="Masukkan nama ODP/ODC")
     
     with col2:
+        st.markdown("**Kirim Lokasi GPS dari HP/Browser**")
+        gps_button = st.button("Ambil Lokasi GPS")
+        latitude = None
+        longitude = None
+
+        if gps_button:
+            location = geolocation()
+            if location:
+                latitude = location['coords']['latitude']
+                longitude = location['coords']['longitude']
+                st.success(f"Lokasi GPS: {latitude}, {longitude}")
+                st.session_state["auto_lat"] = latitude
+                st.session_state["auto_lon"] = longitude
+            else:
+                st.warning("Gagal mengambil lokasi GPS dari perangkat.")
+
+        # Jika sudah ada di session_state, tampilkan
+        if st.session_state.get("auto_lat") and st.session_state.get("auto_lon"):
+            latitude = st.session_state["auto_lat"]
+            longitude = st.session_state["auto_lon"]
+            st.info(f"Koordinat: {latitude}, {longitude}")
+
+        # Opsi klik peta dan deteksi IP tetap bisa dipakai sebagai alternatif
         st.markdown("**Pilih Lokasi di Peta**")
         m = folium.Map(location=[-6.175392, 106.827153], zoom_start=12)
         loc = st_folium(m, width=350, height=250)
-        latitude = None
-        longitude = None
+
+        # State untuk koordinat otomatis
+        if "auto_lat" not in st.session_state:
+            st.session_state["auto_lat"] = None
+        if "auto_lon" not in st.session_state:
+            st.session_state["auto_lon"] = None
+
+        # Jika klik di peta, ambil koordinat
         if loc and loc["last_clicked"]:
             latitude = loc["last_clicked"]["lat"]
             longitude = loc["last_clicked"]["lng"]
+            st.session_state["auto_lat"] = latitude
+            st.session_state["auto_lon"] = longitude
             st.success(f"Lokasi terpilih: {latitude}, {longitude}")
         else:
-            st.info("Klik pada peta untuk memilih lokasi.")
+            if st.button("Deteksi Lokasi Otomatis"):
+                try:
+                    ipinfo = requests.get("https://ipinfo.io/json").json()
+                    if "loc" in ipinfo:
+                        latlon = ipinfo["loc"].split(",")
+                        st.session_state["auto_lat"] = float(latlon[0])
+                        st.session_state["auto_lon"] = float(latlon[1])
+                        st.success(f"Lokasi otomatis: {st.session_state['auto_lat']}, {st.session_state['auto_lon']}")
+                    else:
+                        st.warning("Gagal mendeteksi lokasi dari IP.")
+                except Exception:
+                    st.warning("Gagal mendeteksi lokasi dari IP.")
+            # Tampilkan koordinat otomatis jika sudah ada
+            if st.session_state["auto_lat"] and st.session_state["auto_lon"]:
+                latitude = st.session_state["auto_lat"]
+                longitude = st.session_state["auto_lon"]
+                st.info(f"Koordinat otomatis: {latitude}, {longitude}")
+            else:
+                st.info("Klik pada peta atau tekan tombol untuk mendeteksi lokasi.")
 
     location_address = st.text_area("Alamat Lokasi*", height=100)
     
