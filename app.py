@@ -6,6 +6,8 @@ import os
 from PIL import Image
 import io
 import json
+from streamlit_folium import st_folium
+import folium
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -174,9 +176,18 @@ with st.form("survey_form"):
         odp_name = st.text_input("Nama ODP/ODC*", help="Masukkan nama ODP/ODC")
     
     with col2:
-        latitude = st.text_input("Latitude*", placeholder="-6.175392")
-        longitude = st.text_input("Longitude*", placeholder="106.827153")
-    
+        st.markdown("**Pilih Lokasi di Peta**")
+        m = folium.Map(location=[-6.175392, 106.827153], zoom_start=12)
+        loc = st_folium(m, width=350, height=250)
+        latitude = None
+        longitude = None
+        if loc and loc["last_clicked"]:
+            latitude = loc["last_clicked"]["lat"]
+            longitude = loc["last_clicked"]["lng"]
+            st.success(f"Lokasi terpilih: {latitude}, {longitude}")
+        else:
+            st.info("Klik pada peta untuk memilih lokasi.")
+
     location_address = st.text_area("Alamat Lokasi*", height=100)
     
     st.markdown("---")
