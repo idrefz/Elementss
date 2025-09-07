@@ -5,5 +5,5 @@ requests
 pandas
 pillow
 requests
-streamlit-folium
-streamlit-geolocation
+folium
+geolocation
