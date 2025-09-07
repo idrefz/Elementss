@@ -8,16 +8,29 @@ import datetime
 # --- Konfigurasi ---
 # Ganti dengan token dan chat ID Telegram Anda
 TELEGRAM_TOKEN = "8254431453:AAHKeJBQUKimm8ZRsAXBJLKpNZ2w2VIcZ64"
-TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"  # Ganti dengan Chat ID Anda
+TELEGRAM_CHAT_ID = "-4884449649"  # Ganti dengan Chat ID Anda
 
-# Ganti dengan URL Google Sheet Anda
-GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1BfVjN5GkLzL2r7w5rX9-vYvF9zGqQ8D0/edit#gid=0"
+# Konfigurasi Google Sheets Anda
+# URL Google Sheet Anda
+GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1e37zzocS0pTFhWtIly4F_QNkOd9h95Yz7aC4tMCV3pg/edit?gid=0#gid=0"
+# Nama sheet tempat data akan disimpan
+SHEET_NAME = "element"
 
 # Konfigurasi Google Sheets API
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
 client = gspread.authorize(creds)
-sheet = client.open_by_url(GOOGLE_SHEET_URL).sheet1
+
+try:
+    spreadsheet = client.open_by_url(GOOGLE_SHEET_URL)
+    sheet = spreadsheet.worksheet(SHEET_NAME)
+except gspread.WorksheetNotFound:
+    st.error(f"Worksheet dengan nama '{SHEET_NAME}' tidak ditemukan. Harap periksa kembali nama sheet Anda.")
+    st.stop()
+except Exception as e:
+    st.error(f"Terjadi kesalahan saat menghubungkan ke Google Sheets: {e}")
+    st.stop()
+
 
 # --- Fungsi untuk mengirim foto ke Telegram ---
 def send_photo_to_telegram(photo_data, caption):
@@ -95,8 +108,8 @@ def main():
             # Validasi input
             if not all([latitude, longitude, sto, odp_name, location_address, specification, capacity, status, recommendation, photos]):
                 st.error("Harap isi semua field yang diperlukan dan unggah setidaknya satu foto.")
-            elif capacity == "Pilih kapasitas" or recommendation == "Pilih rekomendasi":
-                st.error("Harap pilih opsi yang valid untuk Kapasitas dan Rekomendasi.")
+            elif capacity == "Pilih kapasitas" or recommendation == "Pilih rekomendasi" or existing_pole == "Pilih kondisi":
+                st.error("Harap pilih opsi yang valid untuk Kapasitas, Tiang Eksisting, dan Rekomendasi.")
             else:
                 try:
                     # Simpan data form ke Google Sheets
