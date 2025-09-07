@@ -6,4 +6,3 @@ pandas
 pillow
 requests
 folium
-geolocation
