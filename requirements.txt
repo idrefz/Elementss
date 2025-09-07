@@ -5,3 +5,4 @@ requests
 pandas
 pillow
 requests
+streamlit-folium
