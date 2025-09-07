@@ -205,19 +205,9 @@ with st.form("survey_form"):
         st.markdown("**Pilih Lokasi di Peta**")
         m = folium.Map(location=[-6.175392, 106.827153], zoom_start=12)
         loc = st_folium(m, width=350, height=250)
-
-        # State untuk koordinat otomatis
-        if "auto_lat" not in st.session_state:
-            st.session_state["auto_lat"] = None
-        if "auto_lon" not in st.session_state:
-            st.session_state["auto_lon"] = None
-
-        # Jika klik di peta, ambil koordinat
         if loc and loc["last_clicked"]:
             latitude = loc["last_clicked"]["lat"]
             longitude = loc["last_clicked"]["lng"]
-            st.session_state["auto_lat"] = latitude
-            st.session_state["auto_lon"] = longitude
             st.success(f"Lokasi terpilih: {latitude}, {longitude}")
         else:
             if st.button("Deteksi Lokasi Otomatis"):
@@ -225,9 +215,9 @@ with st.form("survey_form"):
                     ipinfo = requests.get("https://ipinfo.io/json").json()
                     if "loc" in ipinfo:
                         latlon = ipinfo["loc"].split(",")
-                        st.session_state["auto_lat"] = float(latlon[0])
-                        st.session_state["auto_lon"] = float(latlon[1])
-                        st.success(f"Lokasi otomatis: {st.session_state['auto_lat']}, {st.session_state['auto_lon']}")
+                        latitude = float(latlon[0])
+                        longitude = float(latlon[1])
+                        st.success(f"Lokasi otomatis: {latitude}, {longitude}")
                     else:
                         st.warning("Gagal mendeteksi lokasi dari IP.")
                 except Exception:
